@@ -21,7 +21,7 @@ blueprint:
     
     # --- DIMMING CONFIGURATION ---
     target_light:
-      name: Target Light for Dimming
+      name: Target Light for Dimming (Optional)
       description: >
         If selected, Up/Down buttons will smoothly dim this light(s) and IGNORE the custom actions below. 
         If left empty, Up/Down buttons will use the Custom Actions defined below.
@@ -139,7 +139,7 @@ blueprint:
       default: 400
       selector:
         number:
-          min: 1000
+          min: 100
           max: 1000
           unit_of_measurement: milliseconds
           step: 1
@@ -258,22 +258,22 @@ action:
                           entity_id: !input target_light
                           attribute: brightness
                           above: 254
-            # Option 2: Standard Actions (Short/Long)
-            default:
-              - wait_for_trigger:
-                  - platform: device
-                    device_id: !input pico_id
-                    domain: lutron_caseta
-                    type: release
-                    subtype: raise
-                timeout:
-                  milliseconds: "{{ hold_ms }}"
-              - choose:
-                  - conditions:
-                      - condition: template
-                        value_template: "{{ wait.trigger == none }}"
-                    sequence: !input long_click_action_up
-                default: !input short_click_action_up
+              # Option 2: Standard Actions (Short/Long)
+                default:
+                  - wait_for_trigger:
+                      - platform: device
+                        device_id: !input pico_id
+                        domain: lutron_caseta
+                        type: release
+                        subtype: raise
+                    timeout:
+                      milliseconds: "{{ hold_ms }}"
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ wait.trigger == none }}"
+                        sequence: !input long_click_action_up
+                    default: !input short_click_action_up
 
       # --- STOP BUTTON (Supports Double Click) ---
       - conditions:
@@ -314,7 +314,7 @@ action:
           - condition: trigger
             id: down_pressed
         sequence:
-           - choose:
+          - choose:
               # Option 1: Continuous Dimming
               - conditions:
                   - condition: template
@@ -347,22 +347,22 @@ action:
                           entity_id: !input target_light
                           attribute: brightness
                           below: 1
-            # Option 2: Standard Actions
-            default:
-              - wait_for_trigger:
-                  - platform: device
-                    device_id: !input pico_id
-                    domain: lutron_caseta
-                    type: release
-                    subtype: lower
-                timeout:
-                  milliseconds: "{{ hold_ms }}"
-              - choose:
-                  - conditions:
-                      - condition: template
-                        value_template: "{{ wait.trigger == none }}"
-                    sequence: !input long_click_action_down
-                default: !input short_click_action_down
+              # Option 2: Standard Actions
+                default:
+                  - wait_for_trigger:
+                      - platform: device
+                        device_id: !input pico_id
+                        domain: lutron_caseta
+                        type: release
+                        subtype: lower
+                    timeout:
+                      milliseconds: "{{ hold_ms }}"
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ wait.trigger == none }}"
+                        sequence: !input long_click_action_down
+                    default: !input short_click_action_down
 
       # --- OFF BUTTON (Supports Double Click) ---
       - conditions:
