@@ -5,9 +5,8 @@ blueprint:
     
     FEATURES:
     - Supports Short, Long, and Double Clicks for On, Off, and Middle buttons.
-    - HYBRID UP/DOWN BEHAVIOR: 
-      1. If a 'Target Light' is selected, Up/Down buttons perform smooth continuous dimming (hold to dim).
-      2. If 'Target Light' is empty, Up/Down buttons trigger their custom Short/Long actions.
+    - 1. If a 'Target Light' is selected, Up/Down buttons perform smooth continuous dimming (hold to dim).
+    - 2. If 'Target Light' is empty, Up/Down buttons trigger their custom Short/Long actions.
   domain: automation
 
   input:
