@@ -1,0 +1,210 @@
+blueprint:
+  source_url: https://gist.github.com/smartqasa/9814a750a0d0cfb196fa1fa7ae3630bb
+
+  name: Lutron Pico 5 Button Dimming 
+  description: >-
+    Control one or more lights using a Lutron Pico 5-Button remote (model PJ2-3BRL-GXX-X01).
+    This blueprint simulates a standard Lutron Caseta wall dimmer, including press-and-hold 
+    dimming for the raise/lower buttons. Customize brightness step size, transition speed, 
+    and optionally assign any action to the middle (favorite) button.
+  domain: automation
+
+  input:
+    pico:
+      name: Lutron Pico
+      description: The Lutron Pico used to trigger the automations.
+      selector:
+        device:
+          filter:
+            model: PJ2-3BRL-GXX-X01 (Pico3ButtonRaiseLower)
+    entity:
+      name: Target Lights
+      description: The light entity or entities to be controlled.
+      selector:
+        entity:
+          filter:
+            domain: light
+          multiple: true
+    step:
+      name: Brightness Step Percentage
+      description: "The percentage to increase/decrease the brightness when the raise/lower button is pressed."
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 25
+          unit_of_measurement: percent
+    hold:
+      name: Hold Time
+      description: "The time in milliseconds to hold the raise/lower button before the light starts dimming. A button press of less than this time will brighten/dim the light by the step percentage."
+      default: 400
+      selector:
+        number:
+          min: 100
+          max: 1000
+          unit_of_measurement: milliseconds
+    transition_on:
+      name: Transition On
+      description: The transition speed in seconds when turning the light(s) on.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: seconds
+    transition_off:
+      name: Transition Off
+      description: The transition speed in seconds when turning the light(s) off.
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: seconds
+    middle_button_action:
+      name: Middle (Favorite) Button Override
+      description: "Optional actions to run when the middle (favorite) button is pressed. If left blank, the light will be set to 80% brightness and 2800K color temperature."
+      selector:
+        action: {}
+      default:
+
+variables:
+  step: !input step
+  hold: !input hold
+  hold_time: "{{ hold / 1000 }}"
+  middle_button_action: !input middle_button_action
+
+trigger:
+  - trigger: device
+    device_id: !input pico
+    domain: lutron_caseta
+    type: press
+    subtype: "on"
+    id: on_pressed
+  - trigger: device
+    device_id: !input pico
+    domain: lutron_caseta
+    type: press
+    subtype: raise
+    id: raise_pressed
+  - trigger: device
+    device_id: !input pico
+    domain: lutron_caseta
+    type: press
+    subtype: stop
+    id: stop_pressed
+  - trigger: device
+    device_id: !input pico
+    domain: lutron_caseta
+    type: press
+    subtype: lower
+    id: lower_pressed
+  - trigger: device
+    device_id: !input pico
+    domain: lutron_caseta
+    type: press
+    subtype: "off"
+    id: off_pressed
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: on_pressed
+        sequence:
+          - action: light.turn_on
+            data:
+              brightness_pct: 100
+              transition: !input transition_on
+            target:
+              entity_id: !input entity
+      - conditions:
+          - condition: trigger
+            id: raise_pressed
+        sequence:
+          - repeat:
+              sequence:
+                - action: light.turn_on
+                  data:
+                    brightness_step_pct: "{{ step }}"
+                  target:
+                    entity_id: !input entity
+                  continue_on_error: true
+                - wait_for_trigger:
+                    - trigger: device
+                      device_id: !input pico
+                      domain: lutron_caseta
+                      type: release
+                      subtype: raise
+                  timeout:
+                    seconds: "{{ hold_time }}"
+                  continue_on_timeout: true
+                - if:
+                    - "{{ wait.remaining > 0 }}"
+                  then:
+                    - stop:
+              until:
+                - condition: numeric_state
+                  entity_id: !input entity
+                  attribute: brightness
+                  above: 254
+      - conditions:
+          - condition: trigger
+            id: stop_pressed
+        sequence:
+          - if: >-
+              {{ 
+                middle_button_action is defined and 
+                middle_button_action is sequence and 
+                middle_button_action | length > 0
+              }}
+            then:
+              - sequence: !input middle_button_action
+            else:
+              - action: light.turn_on
+                target:
+                  entity_id: !input entity
+                data:
+                  brightness_pct: 80
+                  kelvin: 2800
+      - conditions:
+          - condition: trigger
+            id: lower_pressed
+        sequence:
+          - repeat:
+              sequence:
+                - action: light.turn_on
+                  data:
+                    brightness_step_pct: "{{ step * -1 }}"
+                  target:
+                    entity_id: !input entity
+                  continue_on_error: true
+                - wait_for_trigger:
+                    - trigger: device
+                      device_id: !input pico
+                      domain: lutron_caseta
+                      type: release
+                      subtype: lower
+                  timeout:
+                    seconds: "{{ hold_time }}"
+                  continue_on_timeout: true
+                - if:
+                    - "{{ wait.remaining > 0 }}"
+                  then:
+                    - stop:
+              until:
+                - condition: numeric_state
+                  entity_id: !input entity
+                  attribute: brightness
+                  below: 1
+      - conditions:
+          - condition: trigger
+            id: off_pressed
+        sequence:
+          - action: light.turn_off
+            data:
+              transition: !input transition_off
+            target:
+              entity_id: !input entity
+
+mode: restart
