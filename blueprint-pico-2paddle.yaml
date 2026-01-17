@@ -195,4 +195,5 @@ action:
             value_template: '{{ wait.trigger == none }}'
           sequence: !input short_click_action_off
         default: !input double_click_action_off
-mode: restart # Changed to restart to ensure new button presses interrupt old loops
+mode: parallel
+max: 10
