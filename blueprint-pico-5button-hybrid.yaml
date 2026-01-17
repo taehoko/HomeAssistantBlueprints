@@ -23,12 +23,13 @@ blueprint:
     target_light:
       name: Target Light for Dimming (Optional)
       description: >
-        If selected, Up/Down buttons will smoothly dim this light(s) and IGNORE the custom actions below. 
+        If selected, Up/Down buttons will smoothly dim this light(s) and ignore the custom actions below. 
         If left empty, Up/Down buttons will use the Custom Actions defined below.
       default: {}
       selector:
         entity:
-          domain: light
+          filter:
+            domain: light
           multiple: true
     dimming_step:
       name: Dimming Step Percentage
