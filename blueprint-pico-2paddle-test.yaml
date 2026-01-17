@@ -196,5 +196,4 @@ action:
           sequence: !input short_click_action_off
         default: !input double_click_action_off
 
-mode: parallel
-max: 10
+mode: single
