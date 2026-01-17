@@ -186,6 +186,6 @@ action:
           sequence: !input short_click_action_off
         default: !input double_click_action_off
 
-# CHANGED TO QUEUED
-mode: queued
+# PARALLEL MODE: Best balance for multi-button response and click detection
+mode: parallel
 max: 10
