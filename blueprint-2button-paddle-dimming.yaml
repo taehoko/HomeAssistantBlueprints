@@ -41,7 +41,7 @@ blueprint:
     delay_click:
       name: Double Click Delay
       description: Time in ms for double click detection.
-      default: 250
+      default: 200
       selector:
         number:
           min: 100.0
@@ -56,7 +56,7 @@ blueprint:
       selector:
         number:
           min: 100.0
-          max: 2000.0
+          max: 1000.0
           unit_of_measurement: milliseconds
           step: 1.0
           mode: slider
@@ -118,7 +118,7 @@ action:
                   leap_button_number: 0
                   action: release
               timeout:
-                milliseconds: 100 # Faster polling for smoothness
+                milliseconds: 250 # Faster polling for smoothness
             - condition: template
               value_template: '{{ wait.trigger != none }}'
             - stop: "Button released"
@@ -174,7 +174,7 @@ action:
                   leap_button_number: 2
                   action: release
               timeout:
-                milliseconds: 100 # Faster polling for smoothness
+                milliseconds: 250 # Faster polling for smoothness
             - condition: template
               value_template: '{{ wait.trigger != none }}'
             - stop: "Button released"
