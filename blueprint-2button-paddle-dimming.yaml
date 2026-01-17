@@ -40,7 +40,7 @@ blueprint:
         action: {}
     delay_click:
       name: Double Click Delay
-      description: The time in milliseconds used for double click detection.
+      description: Time in ms for double click detection.
       default: 250
       selector:
         number:
@@ -51,8 +51,8 @@ blueprint:
           mode: slider
     delay_hold:
       name: Hold Delay
-      description: How long to wait before starting the continuous dimming loop.
-      default: 500
+      description: Time to wait before starting the dimming loop. Reduced for faster response.
+      default: 400
       selector:
         number:
           min: 100.0
@@ -100,16 +100,16 @@ action:
       - conditions:
         - condition: template
           value_template: '{{ wait.trigger == none }}'
-        sequence: # Continuous Hold/Dimming Logic
+        sequence: # SMOOTH DIMMING ON
         - repeat:
             while:
             - condition: template
-              value_template: '{{ repeat.index < 20 }}' # Safety stop
+              value_template: '{{ repeat.index < 40 }}' # Increased limit for smaller steps
             sequence:
             - action: light.turn_on
               target: !input target_lights
               data:
-                brightness_step_pct: 10
+                brightness_step_pct: 5
             - wait_for_trigger:
               - platform: event
                 event_type: lutron_caseta_button_event
@@ -118,10 +118,9 @@ action:
                   leap_button_number: 0
                   action: release
               timeout:
-                milliseconds: 300
+                milliseconds: 100 # Faster polling for smoothness
             - condition: template
               value_template: '{{ wait.trigger != none }}'
-              # If we caught the release, stop the repeat
             - stop: "Button released"
       default: # Double/Short Click detection
       - wait_for_trigger:
@@ -157,16 +156,16 @@ action:
       - conditions:
         - condition: template
           value_template: '{{ wait.trigger == none }}'
-        sequence: # Continuous Hold/Dimming Logic
+        sequence: # SMOOTH DIMMING OFF
         - repeat:
             while:
             - condition: template
-              value_template: '{{ repeat.index < 20 }}'
+              value_template: '{{ repeat.index < 40 }}'
             sequence:
             - action: light.turn_on
               target: !input target_lights
               data:
-                brightness_step_pct: -10
+                brightness_step_pct: -5
             - wait_for_trigger:
               - platform: event
                 event_type: lutron_caseta_button_event
@@ -175,7 +174,7 @@ action:
                   leap_button_number: 2
                   action: release
               timeout:
-                milliseconds: 300
+                milliseconds: 100 # Faster polling for smoothness
             - condition: template
               value_template: '{{ wait.trigger != none }}'
             - stop: "Button released"
@@ -195,4 +194,4 @@ action:
             value_template: '{{ wait.trigger == none }}'
           sequence: !input short_click_action_off
         default: !input double_click_action_off
-mode: restart # Changed to restart to ensure new button presses interrupt old loops
+mode: restart
