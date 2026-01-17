@@ -6,14 +6,11 @@ blueprint:
   input:
     pico_id:
       name: Lutron Pico
-      description: The Lutron Pico used to trigger the automations
       selector:
         device:
           model: PJ2-1P-GXX (PaddleSwitchPico)
-          multiple: false
     target_lights:
       name: Target Lights
-      description: The lights to be dimmed during a hold.
       selector:
         target:
           entity:
@@ -40,26 +37,20 @@ blueprint:
         action: {}
     delay_click:
       name: Double Click Delay
-      description: The time in milliseconds used for double click detection.
       default: 250
       selector:
         number:
           min: 100.0
           max: 1000.0
           unit_of_measurement: milliseconds
-          step: 1.0
-          mode: slider
     delay_hold:
       name: Hold Delay
-      description: How long to wait before starting the continuous dimming loop.
       default: 400
       selector:
         number:
           min: 100.0
           max: 1000.0
           unit_of_measurement: milliseconds
-          step: 1.0
-          mode: slider
 
 trigger:
 - platform: event
@@ -100,11 +91,11 @@ action:
       - conditions:
         - condition: template
           value_template: '{{ wait.trigger == none }}'
-        sequence: # Continuous Hold/Dimming Logic
+        sequence: # CONTINUOUS DIMMING (HOLD)
         - repeat:
             while:
             - condition: template
-              value_template: '{{ repeat.index < 20 }}' # Safety stop
+              value_template: '{{ repeat.index < 40 }}'
             sequence:
             - action: light.turn_on
               target: !input target_lights
@@ -121,9 +112,8 @@ action:
                 milliseconds: 100
             - condition: template
               value_template: '{{ wait.trigger != none }}'
-              # If we caught the release, stop the repeat
-            - stop: "Button released"
-      default: # Double/Short Click detection
+            - stop: "Released"
+      default: # DETECT DOUBLE VS SHORT CLICK
       - wait_for_trigger:
         - platform: event
           event_type: lutron_caseta_button_event
@@ -157,11 +147,11 @@ action:
       - conditions:
         - condition: template
           value_template: '{{ wait.trigger == none }}'
-        sequence: # Continuous Hold/Dimming Logic
+        sequence: # CONTINUOUS DIMMING (HOLD)
         - repeat:
             while:
             - condition: template
-              value_template: '{{ repeat.index < 20 }}'
+              value_template: '{{ repeat.index < 40 }}'
             sequence:
             - action: light.turn_on
               target: !input target_lights
@@ -178,8 +168,8 @@ action:
                 milliseconds: 100
             - condition: template
               value_template: '{{ wait.trigger != none }}'
-            - stop: "Button released"
-      default:
+            - stop: "Released"
+      default: # DETECT DOUBLE VS SHORT CLICK
       - wait_for_trigger:
         - platform: event
           event_type: lutron_caseta_button_event
@@ -195,5 +185,4 @@ action:
             value_template: '{{ wait.trigger == none }}'
           sequence: !input short_click_action_off
         default: !input double_click_action_off
-
-mode: single
+mode: single 
