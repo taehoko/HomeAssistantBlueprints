@@ -2,7 +2,7 @@ blueprint:
   name: Lutron Pico 2 Paddle (1P)
   description: Different Actions on Short, Double Click, and Continuous Hold (Dimming) for Paddle Picos.
   domain: automation
-  
+
   input:
     pico_id:
       name: Lutron Pico
@@ -25,18 +25,17 @@ blueprint:
       default: []
       selector:
         action: {}
-    double_click_action_on:
-      name: On Button Double Click
-      default: []
+    double_tap_brightness:
+      name: Double Tap Brightness
+      description: Brightness level when double-tapping the 'On' button.
+      default: 100
       selector:
-        action: {}
-    double_click_action_off:
-      name: Off Button Double Click
-      default: []
-      selector:
-        action: {}
+        number:
+          min: 1.0
+          max: 100.0
+          unit_of_measurement: "%"
     delay_click:
-      name: Double Click Delay
+      name: Double Click Delay (On Button Only)
       default: 250
       selector:
         number:
@@ -73,6 +72,7 @@ action:
     hold_ms: !input delay_hold
     tap_ms: !input delay_click
     pico_id: !input pico_id
+    brightness_val: !input double_tap_brightness
 - choose:
   - conditions:
     - condition: trigger
@@ -91,7 +91,7 @@ action:
       - conditions:
         - condition: template
           value_template: '{{ wait.trigger == none }}'
-        sequence: # CONTINUOUS DIMMING (HOLD)
+        sequence: # SMOOTH DIMMING ON
         - repeat:
             while:
             - condition: template
@@ -113,7 +113,7 @@ action:
             - condition: template
               value_template: '{{ wait.trigger != none }}'
             - stop: "Released"
-      default: # DETECT DOUBLE VS SHORT CLICK
+      default: # DOUBLE TAP (ON) VS SHORT CLICK (ON)
       - wait_for_trigger:
         - platform: event
           event_type: lutron_caseta_button_event
@@ -128,7 +128,11 @@ action:
           - condition: template
             value_template: '{{ wait.trigger == none }}'
           sequence: !input short_click_action_on
-        default: !input double_click_action_on
+        default: # DOUBLE TAP ACTION
+        - action: light.turn_on
+          target: !input target_lights
+          data:
+            brightness_pct: '{{ brightness_val }}'
 
   - conditions:
     - condition: trigger
@@ -145,10 +149,9 @@ action:
         milliseconds: '{{ hold_ms }}'
     - choose:
       - conditions:
-        # Check if we timed out (implies a long hold)
         - condition: template
           value_template: '{{ wait.trigger == none }}'
-        sequence: # CONTINUOUS DIMMING (HOLD)
+        sequence: # SMOOTH DIMMING OFF
         - repeat:
             while:
             - condition: template
@@ -170,20 +173,7 @@ action:
             - condition: template
               value_template: '{{ wait.trigger != none }}'
             - stop: "Released"
-      default: # DETECT DOUBLE VS SHORT CLICK
-      - wait_for_trigger:
-        - platform: event
-          event_type: lutron_caseta_button_event
-          event_data:
-            device_id: !input pico_id
-            leap_button_number: 2
-            action: press
-        timeout:
-          milliseconds: '{{ tap_ms }}'
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: '{{ wait.trigger == none }}'
-          sequence: !input short_click_action_off
-        default: !input double_click_action_off
+      default: # INSTANT OFF
+      - sequence: !input short_click_action_off
+
 mode: single
