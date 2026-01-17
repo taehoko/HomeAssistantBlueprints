@@ -1,7 +1,8 @@
 blueprint:
-  name: Lutron Pico 2 Paddle (Reliable Tap Fix)
-  description: Fixed issue where fast taps (especially "Off") were sometimes ignored or triggered dimming.
+  name: Lutron Pico 2 Paddle (1P)
+  description: Different Actions on Short, Double Click, and Continuous Hold (Dimming) for Paddle Picos.
   domain: automation
+  
   input:
     pico_id:
       name: Lutron Pico
