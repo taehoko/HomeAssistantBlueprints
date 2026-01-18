@@ -165,7 +165,7 @@ action:
                 target:
                   entity_id: !input entity
                 data:
-                  brightness_pct: 80
+                  brightness_pct: 50
                   kelvin: 2800
       - conditions:
           - condition: trigger
